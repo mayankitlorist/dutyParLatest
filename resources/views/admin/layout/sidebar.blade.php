@@ -82,6 +82,15 @@
                         </p>
                     </a>
                 </li>
+
+                <li class="nav-item has-treeview">
+                    <a href="{{url('admin/BatchSessionCount')}}" class="nav-link {{  Request::path() == 'admin/BatchSessionCount'? 'active' : '' }}">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>
+                            Batch Session Count
+                        </p>
+                    </a>
+                </li>
                 @if(Auth::user()->uid == "Ashwani_A")
                     <li class="nav-item has-treeview">
                         <a href="{{url('admin/newdashboarduser')}}" class="nav-link">

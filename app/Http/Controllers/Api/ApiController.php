@@ -1729,9 +1729,15 @@ class ApiController extends Controller
                                     $date = date('Y-m-d H:i:s');
                                     if ($request->type == 'in') {
                                         $attendanceCheack = UserAttendance::where('user_id', $id)->whereDate('intime', $intime)->first();
+
+                                        // if( $attendanceCheack){
+                                                
+                                        //     }
                                         if (!$attendanceCheack) {
+                                                // $this->smssend($user, $intime ) ;  
+                                                NotificationController::smssend($user);
                                             // print_r($request->batch_id); die;
-                                            $data = [
+                                            $data = [     
                                                           'location_status' => 1,
                                                           'face_status' => 1,
                                                           'intime' => $intime,
@@ -1740,7 +1746,11 @@ class ApiController extends Controller
                                                           'batch_id' => $request->batch_id,
                                                       ];
                                             // print_r($data); die;
-                                            $result = UserAttendance::insertGetId($data);
+                                            $result = DB::table('user_attendance')->insertGetId($data);
+                                            if( $result){
+
+
+                                            }
                                             $data['id'] = $result;
                                             $response = ['success' => true, 'message' => 'Your attendance for today is marked successfully.', 'attendance' => $data];
                                         } else {
@@ -1748,14 +1758,68 @@ class ApiController extends Controller
                                         }
                                     }
                                     if ($request->type == 'out') {
+
+                                    	$oldatt = DB::table('user_attendance')->where('id',$request->attendance_id)->first();
+
+                                    	$oldatt = DB::table('user_attendance_history')->where('intime',$oldatt->intime)->first();
+
+                                    	
+
+                                        $batch = DB::table('batch')->where('id',$request->batch_id)->first();
+                                        if( $batch->hours){
+                                            $hour = $batch->hours.':00';
+                                        }else{
+                                             $hour = '6:00';
+                                        }
+                                        // print_r($hour); die;
+                                       ////////////////////////////////////////
+                                        $att = DB::table('user_attendance')->where('id',$request->attendance_id)->first();
+                                        $date1 = strtotime($att->intime);
+            
+                                        $date22 = date('Y-m-d H:i:s');
+                                        $date2 = strtotime($date22);
+
+                                        // print_r($date2); die;
+                                        $diff = abs($date2 - $date1);
+                                        $years = floor($diff / (365 * 60 * 60 * 24));
+                                        $months = floor(($diff - $years * 365 * 60 * 60 * 24) / (30 * 60 * 60 * 24));
+                                        $days = floor(($diff - $years * 365 * 60 * 60 * 24 - $months * 30 * 60 * 60 * 24) / (60 * 60 * 24));
+                                        $hours = floor(($diff - $years * 365 * 60 * 60 * 24 - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24) / (60 * 60));
+
+                                        $minutes = floor(($diff - $years * 365 * 60 * 60 * 24 - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24 - $hours * 60 * 60) / 60);
+                                        $seconds = floor(($diff - $years * 365 * 60 * 60 * 24 - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24 - $hours * 60 * 60 - $minutes * 60));
+
+
+                                        $time = $hours.':'.$minutes;
+                                          $time  = strtotime($time);
+                                        $time = date('h:i', $time);
+                                        $selectedTime = $hour;
+                                        $endTime = strtotime("-30 minutes", strtotime($selectedTime));
+                                       $endTime = date('h:i', $endTime);
+
+
+                                      
+                                        if($endTime < $time){
+                                            $isvarify = 1;
+                                        }else{
+                                            $isvarify = 0;
+
+                                        }
+                                        ////////////////////////////////////////
+
+                                       
                                         $out_time = UserAttendance::where('id', $request->attendance_id)->first();
                                         if (empty($out_time)) {
                                             return Response::json(['status' => false, 'message' => "There is no in time recorder for today's date"], 400);
                                         }
-
-                                        $data = ['location_status' => 1, 'face_status' => 1, 'outtime' => $intime, 'status' => 1, 'user_id' => $id, 'batch_id' => $request->batch_id];
+                                                NotificationController::smssend($user);
+                                        
+                                        $data = ['location_status' => 1, 'face_status' => 1, 'outtime' => $intime, 'status' => 1, 'user_id' => $id, 'batch_id' => $request->batch_id,'is_valid'=>$isvarify];
                                         UserAttendance::where('id', $request->attendance_id)->update($data);
                                         $result = UserAttendance::where('id', $request->attendance_id)->first();
+
+                                        DB::table('user_attendance_history')->where('id',$oldatt->id)->update($data);
+
                                         $response = ['success' => true, 'message' => 'Your attendance for today is marked successfully.', 'attendance' => $result];
                                     }
                                 } else {
@@ -2026,6 +2090,95 @@ class ApiController extends Controller
             // RequestLogs::create($logData);
 
             return Response::json($response, 200);
+        } catch (Exception $e) {
+            return Response::json(['success' => false, 'message' => $e->getMessage()], 404);
+        }
+    }
+
+
+    public function smssend($user,$date){
+        // print_r($date); die;
+        $name = $user->name;
+        $number = $user->phone;
+        
+        $curl = curl_init();
+
+            curl_setopt_array($curl, array(
+          	CURLOPT_URL => 'https://smsapi.edumarcsms.com/api/v1/sendsms?apikey=ckrugvgwi0002d7qoetgl03k8&senderId=DUTYPR&message=Dear%20'.$name.',%0AYour%20attendance%20for%20today%20has%20been%20marked%20on%202021-10-22.%0AThank%20You,%0ADutyPar%20Team&number='.$number.'&templateId=1407163393391486089',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $response = curl_exec($curl);
+         // print_r ($response); die;
+        curl_close($curl);
+        // print_r ($response); die;
+    }
+
+    public function outattendancemark(Request $request){
+        try {
+           $validator = Validator::make($request->all(), [
+            // 'batch_id' => 'required',
+            'date' => 'required',
+            ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            $validator = $errors->all();
+            for ($i = 0; $i < count($validator); ++$i) {
+                $validatorarray = $validator[$i];
+            }
+            $responseObject = [
+                'status_code' => 400,
+                'message' => $validatorarray,
+            ];
+
+            return response()->json($responseObject, 400);
+        }
+
+        if($request->batch_id){
+
+                $getIds = DB::table('user_attendance_history')->where('batch_id',$request->batch_id)->whereDate('intime',$request->date)->where('outtime',null)->get();
+                $batchId = DB::table('batch')->where('id',$request->batch_id)->first();
+                foreach ($getIds  as $getId) {
+                    $new_time = date("Y-m-d H:i:s", strtotime('+6 hours',strtotime($getId->intime)));
+                    $getId = DB::table('user_attendance_history')->where('id', $getId->id )->update(['outtime'=>$new_time]);    
+                }
+        }else if($request->hours){
+
+            $getIds = DB::table('user_attendance_history')->whereDate('intime',$request->date)->where('outtime','')->get();
+                // $batchId = DB::table('batch')->where('id',$request->batch_id)->first();
+            // $h = '+'.$request->hours;
+             // print_r($getIds); die;
+                foreach ($getIds  as $getId) {
+                    $new_time = date("Y-m-d H:i:s", strtotime('+'.$request->hours.' hours',strtotime($getId->intime)));
+                    $getId = DB::table('user_attendance_history')->where('id', $getId->id )->update(['outtime'=>$new_time]);    
+                }
+
+        }else{
+
+
+        return Response::json(['success' => false, 'message' => 'Please provide batch id ither hours'], 400);
+
+
+
+        }
+
+       
+
+
+
+            // $outtime = $request->date.' 13:43:03';
+            // print_r($outtime); die;
+
+        return Response::json(['success' => true, 'message' => 'successfully'], 200);
+
+
         } catch (Exception $e) {
             return Response::json(['success' => false, 'message' => $e->getMessage()], 404);
         }

@@ -23,10 +23,16 @@
             text-align: center;
             font-size: 1.25rem;
         }
+
+        #bdd {
+          background-image: url(../bgimage/bg3.png);
+          background-repeat: no-repeat;
+          background-size: 1350px 1000px;
+        }
     </style>
 </head>
-<body class="hold-transition login-page">
-<div class="login-box">
+<body class="hold-transition login-page" id="bdd">
+<div class="login-box" >
     <div class="login-logo">
         <!-- <a href="#"><b>Admin</b></a> -->
     </div>

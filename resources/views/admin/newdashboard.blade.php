@@ -6,7 +6,7 @@
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   padding: 16px;
   text-align: center;
-  background-color: #f1f1f1;
+  background:linear-gradient(to top, #ffffff 0%, #b5deff 100%);
 }
 
 .chartist-tooltip {
@@ -18,7 +18,11 @@
   padding: 5px 10px;
   border-radius: 4px;
 }
-
+.tableDivList{
+  display: block;
+  overflow: auto;
+  max-height: 1250px;
+}
 .chartist-tooltip.tooltip-show {
   opacity: 1;
   z-index:100000;
@@ -55,6 +59,7 @@
         min-width: 100%;
         overflow-x:scroll;
         margin-bottom:20px;
+        scroll-snap-align: center;
     }
     .ct-horizontal{
        font-size:16px;
@@ -71,7 +76,31 @@
     .ct-series-b:hover{
 
     }
+    #pageloader
+    {
+      background: rgba( 255, 255, 255, 0.8 );
+      display: none;
+      height: 100%;
+      position: fixed;
+      width: 100%;
+      z-index: 9999;
+    }
+
+    #pageloader img
+    {
+      left: 50%;
+      margin-left: -32px;
+      margin-top: -32px;
+      position: absolute;
+      top: 50%;
+    }
+    /* div#dual_x_div > div>div>div{
+      left: -1114px !important;
+    } */
 </style>
+<div id="pageloader">
+   <img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="processing..." />
+</div>
 
 @section('content')
 
@@ -82,10 +111,32 @@
             <div class="mb-2">
               <h3 class="m-0 text-dark">Dashboard</h3></h3>
             </div>
-            <form class="" action="{{url('admin/newdashboard')}}" method="get">
+            <div class="row w-100">
+              <div class="col-lg-3 col-sm-6">
+                <div class="card">
+                  <h6>Total Number Of Student</h6>
+                  <h1>{{$stucount}}</h1>
+                </div>
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <div class="card">
+                  <h6>Total Present Student</h6>
+                  <h1>{{$todayPre}}</h1>
+                </div>
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <div class="card">
+                  <h6>Total Absent Student</h6>
+                  <h1>{{$todayAp}}</h1>
+                </div>
+              </div>
+            </div>
+            <form class="" action="{{url('admin/newdashboard')}}" method="get" id="myform">
             <input type="hidden" id="district" value="{{$allids['district']}}">
             <input type="hidden" id="center" value="{{$allids['centers']}}">
             <input type="hidden" id="batch" value="{{$allids['batches']}}">
+            <input type="hidden" id="date" value="{{$allids['date']}}">
+
 
                 @csrf
               <div class="row w-100">
@@ -118,7 +169,7 @@
 
                 <div class="col-lg-15 col-sm-3 col-xs-6 mt-1">
                   <label for="">Select Date:</label>
-                  <input class="form-control" type="date" name="date">
+                  <input class="form-control" type="date" name="date" id="selectdate">
 
                 </div>
                 <div class="col-lg-15 col-sm-3 col-xs-6 btnDivDash">
@@ -141,8 +192,8 @@
               </div>
               <div class="col-lg-3 col-sm-6">
                 <div class="card">
-                  <h6>Number Of Districts</h6>
-                  <h1>{{$countdistrict}}</h1>
+                  <h6>Total Number Of Present/Absent</h6>
+                  <h1>{{$totalp}}/{{$totala}}</h1>
                 </div>
               </div>
               <div class="col-lg-3 col-sm-6">
@@ -160,9 +211,9 @@
             </div>
 
             <div class="row container-fluid">
-              <div class="col-lg-6 col-sm-12  p-1">
-                <table class="table bg-white">
-                  <h4>Center Table</h4>
+              <div class="col-lg-6 col-sm-12  p-1 ">
+                <table class="table bg-white tableDivList">
+                  <h4>Center List</h4>
                   <thead>
                     <tr>
                       <th scope="col">#</th>
@@ -182,16 +233,16 @@
                       <td>{{$getcenterusers->districtname}}</td>
                       <td>{{$getcenterusers->location}}</td>
                       <td>{{$getcenterusers->code}}</td>
-                      <td>{{$getcenterusers->centername}}</td>
+                      <td>{{$getcenterusers->centerhead}}</td>
                     </tr>
                     <?php $i++;?>
                     @endforeach
                   </tbody>
                 </table>
               </div>
-              <div class="col-lg-6 col-sm-12 p-1">
-                <table class="table bg-white">
-                  <h4>Batch Table</h4>
+              <div class="col-lg-6 col-sm-12 p-1 ">
+                <table class="table bg-white tableDivList">
+                  <h4>Batch List</h4>
                   <thead>
                     <tr>
                       <th scope="col">#</th>
@@ -212,7 +263,7 @@
                       <td>{{$batchData->districtname}}</td>
                       <td>{{$batchData->location}}</td>
                       <td>{{$batchData->code}}</td>
-                      <td>{{$batchData->centername}}</td>
+                      <td>{{$batchData->centerhead}}</td>
                       <td><button class="btn btn-primary btn-sm attandence" data-id="{{$batchData->id}}" data-batch_name="{{$batchData->batch_name}}">Attandance</button></td>
                     </tr>
                     <?php $i++;?>
@@ -227,9 +278,13 @@
                 </div>
               </div>
               <div class="row">
+                <div class="col-sm-12">
+                <button  style="float:right;" class="btn btn-primary ml-2" onclick="ExportToExcel('xlsx')">Export Attandance</button>
+                </div>
+  
                 <div class="col-lg-12">
                   <div class="table-responsive">
-                    <table class="table table-striped custom-table m-b-0">
+                    <table class="table table-striped custom-table m-b-0" id= "tbl_exporttable_to_xls">
                       <thead id="dateall">
 
                       </thead>
@@ -280,86 +335,40 @@
 <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
 <script src="https://unpkg.com/chartist-plugin-tooltips@0.0.17"></script>
 <script src="https://unpkg.com/chartist-plugin-pointlabels@0.0.6"></script>
+<!-- <script src="https://cdnjs.com/libraries/xlsx"></script> -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script> -->
+<script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+
+
 
 <script type="text/javascript">
 
-	 var ccc= @json($batchname);
-     var presenuser= @json($presenuser);
-     var absentuser= @json($absentuser);
+function ExportToExcel(type, fn, dl) {
+       var elt = document.getElementById('tbl_exporttable_to_xls');
+       var wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
+       return dl ?
+         XLSX.write(wb, { bookType: type, bookSST: true, type: 'base64' }):
+         XLSX.writeFile(wb, fn || ('AttandanceSheet.' + (type || 'xlsx')));
+    }
 
 
-var data = {
-labels: ccc,
 
-series: [
-presenuser,
-absentuser
-]
-};
-
-var options = {
-seriesBarDistance: 15
-};
-
-var responsiveOptions = [
-['screen and (min-width: 641px) and (max-width: 1024px)', {
-seriesBarDistance: 10,
-axisX: {
-  labelInterpolationFnc: function (value) {
-    return value;
-  }
-}
-}],
-['screen and (max-width: 640px)', {
-seriesBarDistance: 5,
-axisX: {
-  labelInterpolationFnc: function (value) {
-    return value[0];
-  }
-}
-}]
-];
-
-new Chartist.Bar('.ct-chart', data, {
-  plugins: [
-    Chartist.plugins.tooltip()
-  ]
-});
-
-// var chart = new Chartist.Line('.ct-chart', {
-//   labels: [1, 2, 3],
-//   series: [
-//     [
-//       {meta: 'description', value: 1 },
-//       {meta: 'description', value: 5},
-//       {meta: 'description', value: 3}
-//     ],
-//     [
-//       {meta: 'other description', value: 2},
-//       {meta: 'other description', value: 4},
-//       {meta: 'other description', value: 2}
-//     ]
-//   ]
-// }, {
-//   low: 0,
-//   high: 8,
-//   fullWidth: true,
-//   plugins: [
-//     Chartist.plugins.tooltip()
-//   ]
-// });
 </script>
 
 @endsection
 
 
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+
 
 <script type="text/javascript">
+
+
      var ccc= @json($batchname);
      var presenuser= @json($presenuser);
      var absentuser= @json($absentuser);
@@ -368,55 +377,98 @@ new Chartist.Bar('.ct-chart', data, {
      console.log(presenuser)
      console.log(absentuser)
 
-
-      google.charts.load('current', {'packages':['bar']});
+    
+      google.charts.load('current', {'packages':['corechart', 'bar']});
       google.charts.setOnLoadCallback(drawStuff);
 
       function drawStuff() {
 
-        // var data = new google.visualization.arrayToDataTable([
-        //   ['Galaxy', 'Present', 'Absent' ],
-        //   $.each(g , function (index, value){
-        //       console.log(value)
-        //       ['jjjj', 30, value.absent ]
-        //   })
-
-        // ]);
+       
         var length = ccc.length;
         console.log(length)
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'batch');
         data.addColumn('number', 'present');
         data.addColumn('number', 'absent');
-
+       
           console.log(ccc.length)
-        for(i = 0; i < ccc.length; i++)
-          data.addRow([ccc[i], presenuser[i], absentuser[i]]);
-
+        for(i = 0; i < ccc.length; i++){
+            data.addRow([ccc[i], presenuser[i], absentuser[i]]);
+         
+        };
+              var cWidth =length *  150;
+              if(cWidth < 1000)
+              {
+                cWidth = 1000;
+              }
+        var view = new google.visualization.DataView(data);
+      view.setColumns([0, 1,
+                       { calc: "stringify",
+                         sourceColumn: 1,
+                         type: "string",
+                         role: "annotation" },
+                       2,
+                       { calc: "stringify",
+                         sourceColumn: 2,
+                         type: "string",
+                         role: "annotation" }]);
 
         var options = {
-          width:length*200,
+          chartArea: {
+            width: '99%'
+          },
+           width:cWidth,
+          
           colors: ['#3cb371', '#FF0000'],
+          // bar: 20,
+          // legend: { position: 'top', alignment: 'start' },
+          legend: {textStyle : {
+                  fontSize: 25 // or the number you want
+              }, position: 'top' },
+          
           chart: {
-            title: 'Nearby galaxies',
+            title: 'Attendance',
             subtitle: 'present on the left, absent on the right'
           },
-          bars: 'vertical', // Required for Material Bar Charts.
-          series: {
-            0: { axis: 'present' }, // Bind series 0 to an axis named 'distance'.
-            1: { axis: 'absent' } // Bind series 1 to an axis named 'brightness'.
+          bar: {groupWidth: 80},
+          hAxis : { 
+              textStyle : {
+                  fontSize: 12 // or the number you want
+              }
+
           },
-          axes: {
-            x: {
-              distance: {label: 'parsecs'}, // Bottom x-axis.
-              brightness: {side: 'top', label: 'apparent magnitude'} // Top x-axis.
-            }
+          annotations: {
+              alwaysOutside: false,
+              textStyle: {
+                  fontSize: 20,
+                  // auraColor: 'white'
+              }
+          },
+          vAxis : { 
+              textStyle : {
+                  fontSize: 20 // or the number you want
+              }
+
           }
+          
+          // series: {
+          //   0: { axis: 'present' }, 
+          //   1: { axis: 'absent' } 
+          // },
+          // axes: {
+          //   y: {
+          //     distance: {label: 'parsecs'}, 
+          //     brightness: {side: 'top', label: 'apparent magnitude'} 
+          //   }
+          // }
         };
 
-      var chart = new google.charts.Bar(document.getElementById('dual_x_div'));
-      chart.draw(data, options);
+      // var chart = new google.charts.Bar(document.getElementById('dual_x_div'));
+      var chart = new google.visualization.ColumnChart(document.getElementById("dual_x_div"));
+      chart.draw(view, options);
     };
+   
+  
     </script>
 
 
@@ -434,6 +486,9 @@ $(document).on('change','#districts',function(){
                        },
                     success: function(value){
                         $('#centers').empty();
+                        $('#batches').empty();
+                        $('#batches').val('');
+                        $('#selectdate').val('');
                         var _options ="<option value=''>Select Center</option>"
                         $.each(value, function(i,values) {
                         _options +=('<option value="'+ values.id+'">'+ values.name +'</option>');
@@ -471,8 +526,10 @@ $( document ).ready(function() {
   var id =$( "#districts" ).val();
     var cen = $("#center").val();
     var batch = $("#batch").val();
-
-
+    var date = $("#date").val();
+    
+    $('#selectdate').val(date);
+    
       $.ajax({
                 url: "{{ url('admin/districts') }}",
                 method: 'post',
@@ -518,7 +575,9 @@ $( document ).ready(function() {
                         $('#batches').append(_options);
                     }
 
-});
+      });
+
+
 })
 
 
@@ -534,7 +593,7 @@ $(document).on('click', '.attandence', function(){
   $("#batchname").val(batch_name)
 
   if(id){
-    $('#showattandence').modal('show');
+   $('#showattandence').modal('show');
   }
 })
 
@@ -565,6 +624,10 @@ $(document).on('click', '#submitshow' , function(){
                        tbl += '<th>Student Name</th>';
                        tbl += '<th>Student UID</th>';
                        tbl += '<th>Batch Name</th>';
+                       tbl += '<th>Total Batch Sessions</th>';
+                       tbl += '<th>Number Of Sessions Attended</th>';
+                       tbl += '<th>% Count Of Attendance</th>';
+
                       $.each(value.dates , function (index, datess){
                        tbl += '<th>'+datess+'</th>';
                       })
@@ -577,15 +640,22 @@ $(document).on('click', '#submitshow' , function(){
                         tbl1 += '<td>'+datas.name+'</td>';
                         tbl1 += '<td>'+datas.uid+'</td>';
                         tbl1 += '<td>'+datas.batchname+'</td>';
+                        tbl1 += '<td> - </td>';
+                        tbl1 += '<td> - </td>';
+                        tbl1 += '<td> - </td>';
+
                         $.each(value.dates , function (index, datess){
                                 if($allatt > 0){
-                                 if(jQuery.inArray(datess, datas.attandance) != -1) {
-                                    tbl1 += '<td><i class="fas fa-check text-success"></i></td>';
+                              if(jQuery.inArray(datess, datas.attandance) != -1) {
+                                    // tbl1 += '<td><i class="fas fa-check text-success"></i></td>';
+                                    tbl1 += '<td style="color:green">P</td>';
                                   } else {
-                                    tbl1 += '<td><i class="fas fa-times text-danger"></i></td>';
+                                    // tbl1 += '<td><i class="fas fa-times text-danger"></i></td>';
+                                    tbl1 += '<td style="color:red">A</td>';
                                   }
                                 }else{
-                                  tbl1 += '<td><i class="fas fa-times text-danger"></i></td>';
+                                  // tbl1 += '<td><i class="fas fa-times text-danger"></i></td>';
+                                  tbl1 += '<td style="color:red">A</td>';
                                 }
                         })
                         tbl1 +='</tr>';
@@ -597,12 +667,10 @@ $(document).on('click', '#submitshow' , function(){
 })
 
 
+$(document).ready(function(){
+  $("#myform").on("submit", function(){
+    $("#pageloader").fadeIn();
+  });//submit
+});
 
-// $(document).on('click', '#searchsubmit', function(){
-
-//     var district = $('#districts').val();
-//     var centers = $('#centers').val();
-//     var
-
-// })
 </script>

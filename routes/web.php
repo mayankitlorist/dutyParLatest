@@ -99,14 +99,15 @@ Route::group(['prefix' => 'admin'], function () {
     Route::post('/centers','Admin\DashboardController@centers');
     Route::post('/getonemonthatt','Admin\DashboardController@getonemonthatt');
     Route::post('/getattand','Admin\DashboardController@getattand');
-
+    Route::get('/attandanceexport', 'Admin\DashboardController@attandanceexcel');
 
     Route::get('/newdashboarduser','Admin\DashboardController@newdashboarduser');
 
 
 
     // Route::get('/newdashboard','Admin\DashboardController@searchdaashboard');
-
+    Route::get('/BatchSessionCount','Admin\DashboardController@testdash');
+    Route::post('/batchstudent','Admin\DashboardController@batchstudent');
 
 
 });

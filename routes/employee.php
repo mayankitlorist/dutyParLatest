@@ -37,4 +37,7 @@ Route::group(['middleware' => 'employee'], function () {
 
     Route::post('attendanceMarkDay', 'Api\ApiController@attendanceMarkDay');
 
+    Route::post('outattendancemark', 'Api\ApiController@outattendancemark');
+
+
 });

@@ -60,4 +60,30 @@ class NotificationController extends Controller
 
         return $result;
     }
+
+    public static function smssend($user){
+        // print_r($date); die;
+        $name = $user->name;
+         $name  = explode(' ', $name);
+        $number = $user->phone;
+             // print_r( $name); echo "=====";
+             //  print_r(   $number ); die;
+        $curl =  curl_init();
+
+            curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://smsapi.edumarcsms.com/api/v1/sendsms?apikey=ckrugvgwi0002d7qoetgl03k8&senderId=DUTYPR&message=Dear%20'.$name[0].',%0AYour%20attendance%20for%20today%20has%20been%20marked%20on%202021-10-22.%0AThank%20You,%0ADutyPar%20Team&number='.$number.'&templateId=1407163393391486089',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $response = curl_exec($curl);
+        // print_r ($response); die;
+        curl_close($curl);
+        // print_r ($response); die;
+            }
 }
